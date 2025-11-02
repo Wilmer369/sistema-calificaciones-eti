@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Calificaciones - 3ERO ELECTRONICA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+        :root { 
+            --neon-blue: #00FFFF; 
+            --dark-bg: #111827; 
+            --color-1: #1E40AF;  /* Azul principal */
+            --color-2: #059669;  /* Verde principal */
+        }
+        body { 
+            font-family: 'Space Mono', monospace; 
+            background-color: var(--dark-bg); 
+            color: #E5E7EB; 
+            min-height: 100vh; 
+            padding: 10px;
+        }
+        .card-container { 
+            width: 100%; 
+            max-width: 100%; 
+            background-color: #1F2937; 
+            border-radius: 1rem; 
+            box-shadow: 0 0 40px rgba(0, 255, 255, 0.2); 
+            border: 2px solid rgba(0, 255, 255, 0.5); 
+            animation: fadeIn 0.8s ease-out; 
+        }
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(10px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        .neon-input { 
+            background-color: #0d121c; 
+            color: var(--neon-blue); 
+            border: 1px solid var(--neon-blue); 
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5); 
+            transition: all 0.3s; 
+        }
+        .neon-input:focus { 
+            outline: none; 
+            border-color: #00FFF7; 
+            box-shadow: 0 0 15px #00FFF7; 
+        }
+        .neon-button { 
+            background-color: var(--neon-blue); 
+            color: #111827; 
+            font-weight: 700; 
+            transition: all 0.3s; 
+            box-shadow: 0 0 15px var(--neon-blue); 
+        }
+        .neon-button:hover { 
+            background-color: #00FFF7; 
+            box-shadow: 0 0 25px #00FFF7; 
+            transform: translateY(-2px); 
+        }
+        .loading-spinner { 
+            border: 4px solid rgba(255, 255, 255, 0.3); 
+            border-top: 4px solid var(--neon-blue); 
+            border-radius: 50%; 
+            width: 30px; 
+            height: 30px; 
+            animation: spin 1s linear infinite; 
+        }
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
+        .grade-card { 
+            background-color: #374151; 
+            border: 1px solid rgba(0, 255, 255, 0.2); 
+            border-radius: 0.5rem; 
+            padding: 1rem; 
+            transition: transform 0.2s, box-shadow 0.2s; 
+        }
+        .grade-value { font-size: 1.5rem; font-weight: 700; }
+        .pass { color: #10B981; } /* 10.0+ */
+        .fail { color: #EF4444; } /* Menos de 10.0 */
+        .high { color: #FBBF24; } /* 16.0+ */
+        .empty { color: #9CA3AF; } /* Para notas vacías */
+        
+        /* Estilos para la tabla de actividades - Desktop */
+        .activity-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 1rem; 
+            font-size: 0.75rem;
+        }
+        .activity-table th, .activity-table td { 
+            border: 1px solid #4B5563; 
+            padding: 0.25rem;
+            text-align: center; 
+            word-break: break-word;
+            line-height: 1.1;
+        }
+        
+        /* Colores alternados por grupo */
+        .group-color-1 { background-color: var(--color-1) !important; }
+        .group-color-2 { background-color: var(--color-2) !important; }
+        
+        /* Fila de números de actividad - Gris */
+        .activity-number-row { 
+            background-color: #6B7280 !important; 
+            color: white !important; 
+            font-weight: bold; 
+            font-size: 0.7rem;
+        }
+        
+        /* Títulos de actividades - Blanco */
+        .activity-title { 
+            color: white !important; 
+            font-weight: bold; 
+            font-size: 0.65rem;
+        }
+        
+        /* Porcentajes - Tamaño muy reducido para desktop */
+        .percentage-cell { 
+            background-color: #1F2937; 
+            color: var(--neon-blue); 
+            font-weight: bold; 
+            font-size: 0.6rem !important;
+            padding: 0.15rem 0.1rem !important;
+            line-height: 1;
+        }
+        
+        /* Celda definitiva especial para desktop */
+        .definitiva-cell {
+            font-size: 0.7rem !important;
+            padding: 0.2rem !important;
+            line-height: 1;
+        }
+        
+        .empty-grade { color: #9CA3AF; font-style: italic; }
+
+        /* Vista móvil - Tarjetas verticales */
+        .mobile-activity-card {
+            background: #374151;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid;
+            overflow: hidden;
+        }
+
+        .mobile-card-header {
+            padding: 0.75rem;
+            color: white;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .mobile-activities-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            padding: 0.75rem;
+            background: #4B5563;
+        }
+
+        .mobile-activity-item {
+            text-align: center;
+            padding: 0.5rem;
+            background: #1F2937;
+            border-radius: 0.25rem;
+        }
+
+        .mobile-activity-name {
+            font-size: 0.7rem;
+            color: #9CA3AF;
+            margin-bottom: 0.25rem;
+        }
+
+        .mobile-activity-grade {
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        .mobile-percentage {
+            background: #1F2937;
+            padding: 0.75rem;
+            text-align: center;
+            border-top: 1px solid #6B7280;
+            color: var(--neon-blue);
+            font-weight: bold;
+        }
+
+        /* Definitiva móvil */
+        .mobile-definitiva {
+            background: #000;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-top: 1rem;
+            border-radius: 0.5rem;
+        }
+
+        /* Ocultar/mostrar vistas según dispositivo */
+        .desktop-view { display: block; }
+        .mobile-view { display: none; }
+
+        @media (max-width: 768px) {
+            .desktop-view { display: none; }
+            .mobile-view { display: block; }
+            
+            .card-container {
+                margin: 5px;
+                padding: 1rem;
+            }
+            
+            .grade-value {
+                font-size: 1.25rem;
+            }
+
+            .percentage-cell {
+                font-size: 0.75rem !important;
+                padding: 0.3rem !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .mobile-activities-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center">
+    <div id="app-container" class="card-container p-4 sm:p-6">
+        <!-- Pantalla de Login -->
+        <div id="login-screen" class="space-y-6">
+            <div class="text-center">
+                <p class="text-xs text-gray-400">SISTEMA DE CALIFICACIONES - ETI</p>
+                <p class="text-xs text-cyan-400 mt-1">Por. Wilmer Montilla</p>
+                <h1 class="text-2xl sm:text-4xl font-bold text-white tracking-widest mt-1">3ERO ELECTRÓNICA</h1>
+                <p class="text-cyan-400 mt-2 text-sm sm:text-base">AÑO ESCOLAR 2025-2026 - SECCIÓN U</p>
+            </div>
+            <div class="bg-gray-700/50 p-4 sm:p-6 rounded-xl space-y-4">
+                <label for="access-key" class="block text-gray-300 text-sm sm:text-base">Ingrese su Código de Estudiante</label>
+                <input type="password" id="access-key" placeholder="••••••••" class="neon-input w-full p-3 rounded-lg text-base sm:text-lg focus:ring-0">
+                <button id="login-button" class="neon-button w-full p-3 rounded-lg flex items-center justify-center space-x-2">
+                    <span id="login-text" class="text-sm sm:text-base">CONSULTAR CALIFICACIONES</span>
+                    <div id="login-spinner" class="loading-spinner hidden"></div>
+                </button>
+                <p id="error-message" class="text-red-500 text-center hidden text-sm sm:text-base"></p>
+                <p class="text-xs sm:text-sm text-gray-400 text-center mt-4">Códigos de prueba: E001, E002, E003</p>
+            </div>
+        </div>
+
+        <!-- Pantalla de Calificaciones -->
+        <div id="dashboard-screen" class="hidden space-y-6 sm:space-y-8">
+            <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-cyan-500/50 pb-4">
+                <div class="flex-1">
+                    <h2 class="text-xl sm:text-3xl font-bold text-white">REPORTE DE CALIFICACIONES</h2>
+                    <p class="text-lg sm:text-xl text-cyan-400 mt-1">ESTUDIANTE: <span id="student-name" class="font-bold"></span></p>
+                    <p class="text-xs sm:text-sm text-gray-400">AÑO ESCOLAR: 2025-2026 | SECCIÓN: U | ETI - Por. Wilmer Montilla</p>
+                </div>
+                <button id="logout-button" class="text-xs sm:text-sm text-red-500 hover:text-red-400 mt-3 sm:mt-0 px-3 sm:px-4 py-2 border border-red-500 rounded-full transition duration-200">
+                    CERRAR SESIÓN
+                </button>
+            </header>
+
+            <section class="space-y-4 sm:space-y-6">
+                <h3 class="text-xl sm:text-2xl font-bold border-l-4 border-cyan-500 pl-3 text-cyan-400">RESUMEN ACADÉMICO</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 text-center">
+                    <div class="grade-card bg-cyan-900/40">
+                        <p class="text-gray-300 text-sm">PROMEDIO GENERAL</p>
+                        <p id="avg-grade" class="grade-value pass mt-2">0.00</p>
+                        <p class="text-xs text-gray-400 mt-1">SOBRE 20 PUNTOS</p>
+                    </div>
+                    <div class="grade-card bg-gray-700/50">
+                        <p class="text-gray-300 text-sm">ESTADO ACADÉMICO</p>
+                        <p id="academic-status" class="grade-value text-yellow-400 mt-2">EN PROCESO</p>
+                        <p class="text-xs text-gray-400 mt-1">EVALUACIÓN CONTINUA</p>
+                    </div>
+                    <div class="grade-card bg-gray-700/50">
+                        <p class="text-gray-300 text-sm">ACTIVIDADES COMPLETADAS</p>
+                        <p id="completed-activities" class="grade-value text-white mt-2">0/12</p>
+                        <p class="text-xs text-gray-400 mt-1">PORCENTAJE: 0%</p>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h3 class="text-xl sm:text-2xl font-bold border-l-4 border-cyan-500 pl-3 text-cyan-400 mb-4">DETALLE DE ACTIVIDADES</h3>
+                
+                <!-- Vista Desktop (Tabla) -->
+                <div class="desktop-view overflow-x-auto">
+                    <table class="activity-table min-w-full">
+                        <thead>
+                            <tr>
+                                <th colspan="4" class="group-color-1">EVALUACIONES ESCRITAS (10%)</th>
+                                <th colspan="4" class="group-color-2">PRÁCTICAS (30%)</th>
+                                <th colspan="3" class="group-color-1">CUESTIONARIOS (15%)</th>
+                                <th colspan="3" class="group-color-2">INTERROGATORIOS (15%)</th>
+                                <th colspan="2" class="group-color-1">PROYECTO (20%)</th>
+                                <th colspan="2" class="group-color-2">APRECIATIVA (10%)</th>
+                                <th rowspan="2" class="bg-black text-white definitiva-cell">DEF</th>
+                            </tr>
+                            <tr class="activity-number-row">
+                                <th>ACT 1</th><th>ACT 2</th><th>ACT 3</th><th>%</th>
+                                <th>ACT 4</th><th>ACT 5</th><th>ACT 6</th><th>%</th>
+                                <th>ACT 7</th><th>ACT 8</th><th>%</th>
+                                <th>ACT 9</th><th>ACT 10</th><th>%</th>
+                                <th>ACT 11</th><th>%</th>
+                                <th>ACT 12</th><th>%</th>
+                            </tr>
+                            <tr class="activity-title">
+                                <th>Prueba 1</th><th>Prueba 2</th><th>Prueba 3</th><th>10%</th>
+                                <th>Práctica 1</th><th>Práctica 2</th><th>Práctica 3</th><th>30%</th>
+                                <th>Cuestion. 1</th><th>Cuestion. 2</th><th>15%</th>
+                                <th>Interrog 1</th><th>Interrog 2</th><th>15%</th>
+                                <th>Proyecto</th><th>20%</th>
+                                <th>Apreciativa</th><th>10%</th>
+                            </tr>
+                        </thead>
+                        <tbody id="grades-table-body">
+                            <!-- Los datos se insertarán aquí -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Vista Móvil (Tarjetas) -->
+                <div class="mobile-view space-y-4" id="mobile-grades-container">
+                    <!-- Las tarjetas móviles se insertarán aquí -->
+                </div>
+            </section>
+
+            <!-- Sección de Superación Pedagógica -->
+            <section id="superacion-section" class="hidden">
+                <h3 class="text-xl sm:text-2xl font-bold border-l-4 border-yellow-500 pl-3 text-yellow-400 mb-4">SUPERACIÓN PEDAGÓGICA</h3>
+                <div class="grade-card bg-yellow-900/20">
+                    <p class="text-yellow-300 text-sm sm:text-base">⚠️ El estudiante requiere superación pedagógica en algunas actividades.</p>
+                    <p class="text-xs sm:text-sm text-gray-400 mt-2">Contacte al docente para más información.</p>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURACIÓN - TU URL DE GOOGLE APPS SCRIPT
+        const API_URL = 'https://script.google.com/macros/s/AKfycbybOVe5au0RXXlMY8Soz_bQEl_y3qkoCVz5p5Xd6_B5nZWWvOBkB41AXddflODFgodu/exec';
+
+        // Referencias DOM
+        const loginScreen = document.getElementById('login-screen');
+        const dashboardScreen = document.getElementById('dashboard-screen');
+        const loginButton = document.getElementById('login-button');
+        const accessKeyInput = document.getElementById('access-key');
+        const errorMessage = document.getElementById('error-message');
+        const loginSpinner = document.getElementById('login-spinner');
+        const loginText = document.getElementById('login-text');
+        const logoutButton = document.getElementById('logout-button');
+        const gradesTableBody = document.getElementById('grades-table-body');
+        const mobileGradesContainer = document.getElementById('mobile-grades-container');
+        const studentName = document.getElementById('student-name');
+        const avgGrade = document.getElementById('avg-grade');
+        const academicStatus = document.getElementById('academic-status');
+        const completedActivities = document.getElementById('completed-activities');
+        const superacionSection = document.getElementById('superacion-section');
+
+        // Función para hacer llamadas a la API
+        async function callAPI(action, params = {}) {
+            const urlParams = new URLSearchParams({
+                action: action,
+                ...params
+            });
+            
+            try {
+                const response = await fetch(`${API_URL}?${urlParams}`);
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error calling API:', error);
+                throw new Error('Error de conexión con el servidor');
+            }
+        }
+
+        // Función para obtener clase CSS según la nota
+        function getGradeClass(grade) {
+            if (grade === null || grade === undefined || grade === '') return 'empty';
+            if (grade >= 16) return 'high';
+            if (grade >= 10) return 'pass';
+            return 'fail';
+        }
+
+        // Función para formatear nota
+        function formatGrade(grade) {
+            if (grade === null || grade === undefined || grade === '') {
+                return '<span class="empty-grade">-</span>';
+            }
+            return parseFloat(grade).toFixed(1);
+        }
+
+        // Función para crear tarjeta móvil
+        function createMobileCard(groupName, activities, percentage, colorClass, groupNumber) {
+            const card = document.createElement('div');
+            card.className = 'mobile-activity-card';
+            card.style.borderLeftColor = groupNumber === 1 ? '#1E40AF' : '#059669';
+            
+            const activitiesHTML = activities.map(activity => `
+                <div class="mobile-activity-item">
+                    <div class="mobile-activity-name">${activity.name}</div>
+                    <div class="mobile-activity-grade ${getGradeClass(activity.grade)}">
+                        ${formatGrade(activity.grade)}
+                    </div>
+                </div>
+            `).join('');
+
+            card.innerHTML = `
+                <div class="mobile-card-header ${colorClass}">
+                    <span>${groupName}</span>
+                    <span class="text-sm">${groupNumber === 1 ? '🔵' : '🟢'}</span>
+                </div>
+                <div class="mobile-activities-grid">
+                    ${activitiesHTML}
+                </div>
+                <div class="mobile-percentage">
+                    % CALCULADO: ${percentage !== null && percentage !== undefined ? parseFloat(percentage).toFixed(2) : '0.00'}
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Renderizar vista móvil
+        function renderMobileView(activities) {
+            mobileGradesContainer.innerHTML = '';
+
+            // Evaluaciones Escritas
+            const evaluacionesCard = createMobileCard(
+                'EVALUACIONES ESCRITAS (10%)',
+                [
+                    { name: 'ACT 1 - Prueba 1', grade: activities.act1 },
+                    { name: 'ACT 2 - Prueba 2', grade: activities.act2 },
+                    { name: 'ACT 3 - Prueba 3', grade: activities.act3 }
+                ],
+                activities.perc1,
+                'group-color-1',
+                1
+            );
+            mobileGradesContainer.appendChild(evaluacionesCard);
+
+            // Prácticas
+            const practicasCard = createMobileCard(
+                'PRÁCTICAS (30%)',
+                [
+                    { name: 'ACT 4 - Práctica 1', grade: activities.act4 },
+                    { name: 'ACT 5 - Práctica 2', grade: activities.act5 },
+                    { name: 'ACT 6 - Práctica 3', grade: activities.act6 }
+                ],
+                activities.perc2,
+                'group-color-2',
+                2
+            );
+            mobileGradesContainer.appendChild(practicasCard);
+
+            // Cuestionarios
+            const cuestionariosCard = createMobileCard(
+                'CUESTIONARIOS (15%)',
+                [
+                    { name: 'ACT 7 - Cuestion. 1', grade: activities.act7 },
+                    { name: 'ACT 8 - Cuestion. 2', grade: activities.act8 }
+                ],
+                activities.perc3,
+                'group-color-1',
+                1
+            );
+            mobileGradesContainer.appendChild(cuestionariosCard);
+
+            // Interrogatorios
+            const interrogatoriosCard = createMobileCard(
+                'INTERROGATORIOS (15%)',
+                [
+                    { name: 'ACT 9 - Interrog 1', grade: activities.act9 },
+                    { name: 'ACT 10 - Interrog 2', grade: activities.act10 }
+                ],
+                activities.perc4,
+                'group-color-2',
+                2
+            );
+            mobileGradesContainer.appendChild(interrogatoriosCard);
+
+            // Proyecto
+            const proyectoCard = createMobileCard(
+                'PROYECTO (20%)',
+                [
+                    { name: 'ACT 11 - Proyecto', grade: activities.act11 }
+                ],
+                activities.perc5,
+                'group-color-1',
+                1
+            );
+            mobileGradesContainer.appendChild(proyectoCard);
+
+            // Apreciativa
+            const apreciativaCard = createMobileCard(
+                'APRECIATIVA (10%)',
+                [
+                    { name: 'ACT 12 - Apreciativa', grade: activities.act12 }
+                ],
+                activities.perc6,
+                'group-color-2',
+                2
+            );
+            mobileGradesContainer.appendChild(apreciativaCard);
+
+            // Definitiva
+            const definitivaCard = document.createElement('div');
+            definitivaCard.className = 'mobile-definitiva';
+            definitivaCard.innerHTML = `
+                <div>DEFINITIVA</div>
+                <div class="${getGradeClass(activities.definitiva)}" style="font-size: 1.5rem;">
+                    ${activities.definitiva > 0 ? parseFloat(activities.definitiva).toFixed(2) : '-'}
+                </div>
+            `;
+            mobileGradesContainer.appendChild(definitivaCard);
+        }
+
+        // Renderizar vista desktop
+        function renderDesktopView(activities) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="${getGradeClass(activities.act1)}">${formatGrade(activities.act1)}</td>
+                <td class="${getGradeClass(activities.act2)}">${formatGrade(activities.act2)}</td>
+                <td class="${getGradeClass(activities.act3)}">${formatGrade(activities.act3)}</td>
+                <td class="percentage-cell">${activities.perc1 ? parseFloat(activities.perc1).toFixed(2) : '-'}</td>
+                
+                <td class="${getGradeClass(activities.act4)}">${formatGrade(activities.act4)}</td>
+                <td class="${getGradeClass(activities.act5)}">${formatGrade(activities.act5)}</td>
+                <td class="${getGradeClass(activities.act6)}">${formatGrade(activities.act6)}</td>
+                <td class="percentage-cell">${activities.perc2 ? parseFloat(activities.perc2).toFixed(2) : '-'}</td>
+                
+                <td class="${getGradeClass(activities.act7)}">${formatGrade(activities.act7)}</td>
+                <td class="${getGradeClass(activities.act8)}">${formatGrade(activities.act8)}</td>
+                <td class="percentage-cell">${activities.perc3 ? parseFloat(activities.perc3).toFixed(2) : '-'}</td>
+                
+                <td class="${getGradeClass(activities.act9)}">${formatGrade(activities.act9)}</td>
+                <td class="${getGradeClass(activities.act10)}">${formatGrade(activities.act10)}</td>
+                <td class="percentage-cell">${activities.perc4 ? parseFloat(activities.perc4).toFixed(2) : '-'}</td>
+                
+                <td class="${getGradeClass(activities.act11)}">${formatGrade(activities.act11)}</td>
+                <td class="percentage-cell">${activities.perc5 ? parseFloat(activities.perc5).toFixed(2) : '-'}</td>
+                
+                <td class="${getGradeClass(activities.act12)}">${formatGrade(activities.act12)}</td>
+                <td class="percentage-cell">${activities.perc6 ? parseFloat(activities.perc6).toFixed(2) : '-'}</td>
+                
+                <td class="definitiva-cell grade-value ${getGradeClass(activities.definitiva)} font-bold bg-black text-white">
+                    ${activities.definitiva > 0 ? parseFloat(activities.definitiva).toFixed(2) : '-'}
+                </td>
+            `;
+            
+            gradesTableBody.innerHTML = '';
+            gradesTableBody.appendChild(row);
+        }
+
+        // Función para calcular estadísticas
+        function calculateGrades(activities) {
+            let totalActivities = 0;
+            let completedCount = 0;
+            let needsSuperacion = false;
+            
+            const activityKeys = ['act1', 'act2', 'act3', 'act4', 'act5', 'act6', 'act7', 'act8', 'act9', 'act10', 'act11', 'act12'];
+            
+            activityKeys.forEach(key => {
+                totalActivities++;
+                if (activities[key] !== null && activities[key] !== undefined && activities[key] !== '') {
+                    completedCount++;
+                    if (parseFloat(activities[key]) < 10) {
+                        needsSuperacion = true;
+                    }
+                }
+            });
+            
+            const completedPercentage = totalActivities > 0 ? 
+                Math.round((completedCount / totalActivities) * 100) : 0;
+            
+            return {
+                completedCount,
+                totalActivities,
+                completedPercentage,
+                definitiva: activities.definitiva || 0,
+                needsSuperacion
+            };
+        }
+
+        // Renderizar dashboard completo
+        async function renderDashboard(data) {
+            studentName.textContent = data.name;
+            
+            const calculations = calculateGrades(data.grades);
+            
+            // Actualizar resumen
+            avgGrade.textContent = calculations.definitiva > 0 ? calculations.definitiva.toFixed(2) : '0.00';
+            avgGrade.className = `grade-value mt-2 ${getGradeClass(calculations.definitiva)}`;
+            
+            completedActivities.textContent = `${calculations.completedCount}/${calculations.totalActivities}`;
+            
+            // Determinar estado académico
+            if (calculations.completedCount === 0) {
+                academicStatus.textContent = 'SIN ACTIVIDADES';
+                academicStatus.className = 'grade-value text-gray-400 mt-2';
+            } else if (calculations.definitiva >= 10) {
+                academicStatus.textContent = 'APROBADO';
+                academicStatus.className = 'grade-value pass mt-2';
+            } else {
+                academicStatus.textContent = 'EN SUPERACIÓN';
+                academicStatus.className = 'grade-value fail mt-2';
+            }
+            
+            // Renderizar vistas
+            renderDesktopView(data.grades);
+            renderMobileView(data.grades);
+            
+            // Mostrar/ocultar sección de superación
+            if (calculations.needsSuperacion) {
+                superacionSection.classList.remove('hidden');
+            } else {
+                superacionSection.classList.add('hidden');
+            }
+            
+            loginScreen.classList.add('hidden');
+            dashboardScreen.classList.remove('hidden');
+        }
+
+        // Manejar login
+        async function handleLogin() {
+            const accessKey = accessKeyInput.value.trim().toUpperCase();
+            errorMessage.classList.add('hidden');
+            
+            loginButton.disabled = true;
+            loginSpinner.classList.remove('hidden');
+            loginText.textContent = 'CONSULTANDO...';
+
+            try {
+                // Primero verificar login
+                const loginResult = await callAPI('login', { clave: accessKey });
+                
+                if (loginResult.success) {
+                    // Luego obtener calificaciones
+                    const gradesResult = await callAPI('getGrades', { clave: accessKey });
+                    
+                    if (gradesResult && !gradesResult.error) {
+                        await renderDashboard(gradesResult);
+                    } else {
+                        throw new Error(gradesResult.error || 'No se pudieron cargar las calificaciones');
+                    }
+                    
+                    accessKeyInput.value = '';
+                } else {
+                    throw new Error(loginResult.error || 'Clave inválida');
+                }
+            } catch (error) {
+                errorMessage.textContent = error.message || "Error de conexión";
+                errorMessage.classList.remove('hidden');
+                
+                loginButton.disabled = false;
+                loginSpinner.classList.add('hidden');
+                loginText.textContent = 'CONSULTAR CALIFICACIONES';
+            }
+        }
+
+        function handleLogout() {
+            dashboardScreen.classList.add('hidden');
+            loginScreen.classList.remove('hidden');
+            studentName.textContent = '';
+            gradesTableBody.innerHTML = '';
+            mobileGradesContainer.innerHTML = '';
+            superacionSection.classList.add('hidden');
+        }
+
+        // Event Listeners
+        loginButton.addEventListener('click', handleLogin);
+        accessKeyInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') handleLogin();
+        });
+        logoutButton.addEventListener('click', handleLogout);
+
+        console.log('🚀 Sistema conectado con Google Sheets');
+        console.log('📊 API URL:', API_URL);
+    </script>
+</body>
+</html>
