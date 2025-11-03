@@ -363,11 +363,12 @@
         const completedActivities = document.getElementById('completed-activities');
         const superacionSection = document.getElementById('superacion-section');
 
-        // Función para hacer llamadas a la API
+        /// Función para hacer llamadas a la API CON USER AGENT
 async function callAPI(action, params = {}) {
     const urlParams = new URLSearchParams({
         action: action,
-        ...params
+        ...params,
+        userAgent: navigator.userAgent  // ← AGREGAR ESTA LÍNEA
     });
     
     try {
