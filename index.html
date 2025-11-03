@@ -364,21 +364,21 @@
         const superacionSection = document.getElementById('superacion-section');
 
         // Función para hacer llamadas a la API
-        async function callAPI(action, params = {}) {
-            const urlParams = new URLSearchParams({
-                action: action,
-                ...params
-            });
-            
-            try {
-                const response = await fetch(`${API_URL}?${urlParams}`);
-                const data = await response.json();
-                return data;
-            } catch (error) {
-                console.error('Error calling API:', error);
-                throw new Error('Error de conexión con el servidor');
-            }
-        }
+async function callAPI(action, params = {}) {
+    const urlParams = new URLSearchParams({
+        action: action,
+        ...params
+    });
+    
+    try {
+        const response = await fetch(`${API_URL}?${urlParams}`);
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error calling API:', error);
+        throw new Error('Error de conexión con el servidor');
+    }
+}
 
         // Función para obtener clase CSS según la nota
         function getGradeClass(grade) {
@@ -686,4 +686,5 @@
 </body>
 
 </html>
+
 
