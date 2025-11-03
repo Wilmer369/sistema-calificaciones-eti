@@ -368,8 +368,10 @@ async function callAPI(action, params = {}) {
     const urlParams = new URLSearchParams({
         action: action,
         ...params,
-        userAgent: navigator.userAgent  // ← AGREGAR ESTA LÍNEA
+        userAgent: navigator.userAgent  // ← ESTA LÍNEA ES CLAVE
     });
+    
+    console.log('🔍 Enviando User Agent:', navigator.userAgent);
     
     try {
         const response = await fetch(`${API_URL}?${urlParams}`);
@@ -687,5 +689,6 @@ async function callAPI(action, params = {}) {
 </body>
 
 </html>
+
 
 
